@@ -3,10 +3,19 @@ import time
 import re
 import logging 
 import inspect
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+
 from slackclient import SlackClient
 
 #print(inspect.getsource(logging))
 logging.basicConfig(filname='example.log', filemode='w', level=logging.DEBUG)
+
+s = requests.Session()
+s.auth = ('acct:snackthenorth-stg@snackthenorthserviceuser', 'hackthenorth')
+
+call_response = requests.get("https://gateway-staging.ncrcloud.com/", auth = ('acct:snackthenorth-stg@snackthenorthserviceuser', 'hackthenorth'))
 
 # instantiate Slack client
 slack_client = SlackClient('xoxb-436331105427-435861493473-IngPp06L9nVM6dzcU93g5Nit')
@@ -18,6 +27,16 @@ RTM_READ_DELAY = 1 # 1 second delay between reading from RTM
 EXAMPLE_COMMAND = "check for"
 MENTION_REGEX = "^<@(|[WU].+?)>(.*)"
 
+def find_value(id, json_repr):
+    results = []
+
+    def _decode_dict(a_dict):
+        try: results.append(a_dict[id])
+        except KeyError: pass
+        return a_dict
+
+    json.loads(json_repr, object_hook=_decode_dict)  # Return value ignored.
+    return results
 
 def parse_bot_commands(slack_events):
     """
@@ -54,11 +73,11 @@ def handle_command(command, channel):
     if command.startswith(EXAMPLE_COMMAND):
         #response = "Sure...write some more code then I can do that!"
         command1, command2, food, floor = command.split()
-        print(command1)
-        print(command2)
-        print(floor)
-        print(food)
-        response = "Nice! " + food + " here"
+        
+        find_value(food+floor, call_response)
+        response = food + " is" + find_value + " there"
+        
+        #response = food + " is available on floor " + floor
         
 
     # Sends the response back to the channel
